@@ -40,5 +40,7 @@ jobs:
           push: true
           context: ./odoo
           file: ./odoo/Dockerfile
+          no-cache: true
           platforms: linux/amd64
-          tags: vanderleiromera/doodba16:${{ steps.tagging.outputs.new_version }}
+          tags: vanderleiromera/doodba16_odoo:${{ steps.tagging.outputs.new_version }}
+          build-args: ODOO_VERSION=16.0
