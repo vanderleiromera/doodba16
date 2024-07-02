@@ -1,0 +1,56 @@
+l10n-brazil:
+  - "*"
+account-invoicing:
+  - "*"
+stock-logistics-workflow:
+  - "*"
+dms:
+  - "*"
+web:
+  - "*"
+social:
+  - "*"
+bank-statement-import:
+  - "*"
+server-ux:
+  - "*"
+account-reconcile:
+  - "*"
+product-attribute:
+  - "*"
+stock-logistics-barcode:
+  - "*"
+stock-logistics-warehouse:
+  - "*"
+purchase-workflow:
+  - "*"
+sale-workflow:
+  - "*"
+pos:
+  - "*"
+credit-control:
+  - "*"
+account-payment:
+  - "*"
+contract:
+  - "*"
+sale-reporting:
+  - "*"
+purchase-reporting:
+  - "*"
+stock-logistics-reporting:
+  - "*"
+account-invoice-reporting:
+  - "*"
+server-tools:
+  - "*"
+reporting-engine:
+  - "*"
+mis-builder:
+  - "*"
+account-financial-reporting:
+  - "*"
+margin-analysis:
+  - "*"
+bank-payment:
+  - "*"
