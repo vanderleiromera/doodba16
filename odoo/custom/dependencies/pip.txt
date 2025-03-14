@@ -17,7 +17,7 @@ phonenumbers
 pyyaml
 workalendar
 xmldiff
-lxml
+lxml==4.9.3
 -e git+https://github.com/OCA/openupgradelib.git@master#egg=openupgradelib
 vcrpy
 odoo-test-helper
@@ -26,3 +26,4 @@ backports-datetime-fromisoformat
 # OCA Modules
 pysftp
 python-barcode
+lxml_html_clean
