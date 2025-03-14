@@ -1,16 +1,20 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: v7.0.0
+_commit: v8.3.4
 _src_path: gh:Tecnativa/doodba-copier-template
 backup_dst: ""
 cidr_whitelist: null
-domains_prod: {}
-domains_test: {}
+domains_prod:
+  - hosts:
+      - prod.docker.local
+domains_test:
+  - hosts:
+      - test.docker.local
 gitlab_url: ""
 odoo_dbfilter: ^prod
 odoo_initial_lang: en_US
-odoo_listdb: true
+odoo_listdb: false
 odoo_oci_image: ""
-odoo_proxy: ""
+odoo_proxy: traefik
 odoo_version: 16.0
 paths_without_crawlers:
   - /web
@@ -18,9 +22,10 @@ paths_without_crawlers:
 postgres_dbname: prod
 postgres_exposed: false
 postgres_username: odoo
-postgres_version: "15"
-project_author: ParanaStillus
+postgres_version: "16"
+project_author: Stillus
 project_license: BSL-1.0
-project_name: stillus
+project_name: doodba16-odoo
 smtp_default_from: ""
 smtp_relay_host: ""
+traefik_version: 2

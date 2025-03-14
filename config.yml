@@ -1,0 +1,108 @@
+tls:
+  # <-------------------------------------------------------->
+  #  stores:
+  #    default:
+  #      defaultCertificate:
+  #        certFile: "/etc/certs/cloudflare.crt"
+  #        keyFile: "/etc/certs/cloudflare.key"
+
+  #  certificates:
+  #    - certFile: "/etc/certs/cloudflare.crt"
+  #      keyFile: "/etc/certs/cloudflare.key"
+  #      stores:
+  #        - default
+  # <----------------------------------------------------------->
+  # Comentar o trecho pontilhado pra obter novo certificado Lets encript
+  # Apos receber, Habilitar novamente, ativar proxied, ssl full cloudflare
+  # Habilitado o cloudflare gera o certifica lets - mas não gerar, desabilitar pra gerar...
+  # Options default, não interfere na geração do certificado ...
+
+  options:
+    # <...........Comentar esse trecho pra desativar cloudflare....>
+    default:
+      clientAuth:
+        # in PEM format. each file can contain multiple CAs.
+        caFiles:
+          - /etc/certs/origin-pull-ca.pem
+        clientAuthType: RequireAndVerifyClientCert
+      # <............................................................>
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        - TLS_AES_128_GCM_SHA256
+        - TLS_AES_256_GCM_SHA384
+        - TLS_CHACHA20_POLY1305_SHA256
+      curvePreferences:
+        - CurveP521
+        - CurveP384
+      sniStrict: true
+
+http:
+  middlewares:
+    secure:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+        accessControlMaxAge: 100
+        hostsProxyHeaders:
+          - "X-Forwarded-Host"
+        addVaryHeader: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        frameDeny: true
+        #sslRedirect: true
+        #HSTS Configuration
+        sslproxyheaders:
+          X-Forwarded-Proto: "https"
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        forceSTSHeader: true
+        referrerPolicy: "same-origin"
+        customFrameOptionsValue: "SAMEORIGIN"
+        customresponseheaders:
+          X-Robots-Tag: "none, noarchive, nosnippet, notranslate, noimageindex"
+        permissionsPolicy: geolocation=(), microphone=()
+
+    buffering:
+      buffering:
+        retryExpression: IsNetworkError() && Attempts() < 5
+
+    compress:
+      compress: "true"
+
+    nocrawlers:
+      headers:
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow"
+
+    doodba:
+      chain:
+        middlewares:
+          - buffering
+          - compress
+          - secure
+
+    localhost-only:
+      ipWhitelist:
+        sourceRange:
+          - "127.0.0.1/32"
+          - "172.16.0.0/12" # change to your docker subnet
+
+    prod-headers:
+      headers:
+        customresponseHeaders:
+          # In environment with versioned static files, switch commented
+          #Cache-Control: "private,max-age=31536000"
+          #Cache-Control: "private,no-cache"
+          #https://developers.cloudflare.com/cache/about/cache-control/
+          Cache-Control: "public,max-age=864000"
+
+    test-headers:
+      headers:
+        customresponseHeaders:
+          Cache-Control: "private,no-cache"

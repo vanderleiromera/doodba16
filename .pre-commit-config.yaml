@@ -23,7 +23,7 @@ repos:
         files: "\\.rej$"
   - &maintainer_tools
     repo: https://github.com/oca/maintainer-tools
-    rev: 400ffa99242c8b225ab4d34de78721a68b292a61
+    rev: b89f767503be6ab2b11e4f50a7557cb20066e667
     hooks:
       # update the NOT INSTALLABLE ADDONS section above
       - id: oca-update-pre-commit-excluded-addons
@@ -97,8 +97,8 @@ repos:
       - id: oca-gen-addon-readme
         args:
           - --addons-dir=odoo/custom/src/private
-          - --org-name=ParanaStillus
-          - --repo-name=stillus
+          - --org-name=Stillus
+          - --repo-name=doodba16-odoo
           - --convert-fragments-to-markdown
           - --gen-html
           - --if-fragments-changed
