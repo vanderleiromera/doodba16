@@ -54,3 +54,5 @@ margin-analysis:
   - "*"
 bank-payment:
   - "*"
+account-financial-tools:
+  - "*"
