@@ -272,7 +272,7 @@
   defaults:
     depth: $DEPTH_DEFAULT
   remotes:
-    origin: https://github.com/OCA/bank-payment.git
+    origin: https://github.com/OCA/account-financial-tools.git
   target: origin $ODOO_VERSION
   merges:
     - origin $ODOO_VERSION
