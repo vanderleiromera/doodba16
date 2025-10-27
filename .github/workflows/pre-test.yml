@@ -71,7 +71,7 @@ jobs:
           github_token: ${{ secrets.DOO_GITHUB_TOKEN }}
 
       - name: Build and export to Docker
-        uses: docker/build-push-action@v6.15.0
+        uses: docker/build-push-action@v6.18.0
         with:
           context: ./odoo
           load: true
@@ -84,7 +84,7 @@ jobs:
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v6.15.0
+        uses: docker/build-push-action@v6.18.0
         with:
           context: ./odoo
           file: ./odoo/Dockerfile
