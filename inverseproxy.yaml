@@ -29,7 +29,7 @@ services:
       - "--entrypoints.web-main.address=:443"
       - "--entrypoints.web-main.http.tls.certResolver=letsencrypt"
       - "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory"
-      - "--certificatesresolvers.letsencrypt.acme.email=alerts@example.com"
+      - "--certificatesresolvers.letsencrypt.acme.email=vanderleiromera@gmail.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme/acme-v2.json"
       - "--entrypoints.web-insecure.http.redirections.entryPoint.to=web-main"
       - "--entrypoints.web-insecure.http.redirections.entryPoint.scheme=https"
