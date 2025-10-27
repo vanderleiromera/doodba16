@@ -1,18 +1,14 @@
 name: pre-test
 
 on:
-  pull_request:
   push:
     branches:
       - ci-test
+  pull_request:
   workflow_dispatch:
-    inputs:
-      testci:
-        description: "Test-CI"
-        required: false
 
 env:
-  GITHUB_TOKEN: ${{ secrets.DOO_GITHUB_TOKEN }}
+  DOO_GITHUB_TOKEN: ${{ secrets.DOO_GITHUB_TOKEN }}
   TEST_TAG: vanderleiromera/doodba16_odoo:test
 
 jobs:
@@ -22,17 +18,14 @@ jobs:
       - uses: actions/checkout@v4.2.2
       - uses: actions/setup-python@v6.0.0
         with:
-          # The pylint-odoo version we use here does not support python 3.10
-          # https://github.com/OCA/oca-addons-repo-template/issues/80
-          # We also need to pin to an older version of python for older odoo versions
-          # where we are not using black > 21. Older black versions won't work with
-          # Python 3.9.8+, and we can't bump black without reformatting.
           python-version: "3.10.19"
       - uses: pre-commit/action@v3.0.1
 
-  test-image:
+  test:
+    name: Build and test image
     needs: pre-commit
     runs-on: ubuntu-latest
+
     services:
       db:
         image: ghcr.io/tecnativa/postgres-autoconf:16-alpine
@@ -41,24 +34,22 @@ jobs:
           POSTGRES_PASSWORD: odoopassword
         ports:
           - 5432:5432
-
-        options:
+        options: >-
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s
           --health-retries 5
 
     steps:
-      # Shared steps
       - uses: actions/checkout@v4.2.2
         with:
-          fetch-depth: 0Fetch all history for all tags and branches
+          fetch-depth: 0 # necessário para tagging
 
-      - name: QEMU
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.6.0
 
-      - name: Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.10.0
 
-      - name: Login to Dockerhub
+      - name: Log in to DockerHub
         uses: docker/login-action@v3.4.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -68,27 +59,45 @@ jobs:
         id: tagging
         uses: mathieudutour/github-tag-action@v6.2
         with:
-          github_token: ${{ secrets.DOO_GITHUB_TOKEN }}
+          github_token: ${{ env.DOO_GITHUB_TOKEN }}
 
-      - name: Build and export to Docker
-        uses: docker/build-push-action@v6.15.0
-        with:
-          context: ./odoo
-          load: true
-          build-args: ODOO_VERSION=16.0
-          tags: ${{ env.TEST_TAG }}
-
-      - name: Test
-        run: |
-          docker run --network ${{ job.container.network }} --rm ${{ env.TEST_TAG }} odoo --stop-after-init -i base
-
-      - name: Build and push
-        id: docker_build
+      - name: Build doodba image
+        id: build
         uses: docker/build-push-action@v6.15.0
         with:
           context: ./odoo
           file: ./odoo/Dockerfile
-          no-cache: true
-          platforms: linux/amd64
-          tags: vanderleiromera/doodba16_odoo:${{ steps.tagging.outputs.new_version }}
-          build-args: ODOO_VERSION=16.0
+          build-args: |
+            ODOO_VERSION=16.0
+          tags: |
+            ${{ env.TEST_TAG }}
+            vanderleiromera/doodba16_odoo:${{ steps.tagging.outputs.new_version }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Testando a inicialização real do Odoo (baseado no padrão do Doodba CI)
+      - name: Wait for Postgres
+        run: |
+          echo "Waiting for Postgres to be ready..."
+          for i in {1..20}; do
+            if docker run --rm --network host postgres:16-alpine pg_isready -h 127.0.0.1 -U odoo >/dev/null 2>&1; then
+              echo "✅ Postgres is ready!"
+              break
+            fi
+            echo "⏳ Waiting... ($i/20)"
+            sleep 3
+          done
+      - name: Test Odoo startup
+        run: |
+          docker run --network host --rm \
+            -e PGHOST=127.0.0.1 \
+            -e PGUSER=odoo \
+            -e PGPASSWORD=odoopassword \
+            -e PGDATABASE=postgres \
+            ${{ env.TEST_TAG }} \
+            odoo --stop-after-init -i base
+
+      - name: Push final image
+        run: |
+          docker push vanderleiromera/doodba16_odoo:${{ steps.tagging.outputs.new_version }}
