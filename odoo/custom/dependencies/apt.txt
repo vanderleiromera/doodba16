@@ -12,7 +12,7 @@ libfreetype6-dev
 libxslt1-dev
 libsasl2-dev
 libldap2-dev
-libreoffice
+#libreoffice
 libssl-dev
 libjpeg-dev
 libpng-dev
