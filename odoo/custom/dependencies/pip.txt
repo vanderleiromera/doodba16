@@ -27,7 +27,7 @@ backports-datetime-fromisoformat
 pysftp
 python-barcode
 lxml_html_clean
-paramiko==3.5.1
+paramiko==4.0.0
 freezegun
 numpy-financial<=1.0.0
 numpy>=1.15
