@@ -19,7 +19,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5.0.0
       - uses: actions/setup-python@v6.0.0
         with:
           # The pylint-odoo version we use here does not support python 3.10
@@ -48,7 +48,7 @@ jobs:
 
     steps:
       # Shared steps
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0Fetch all history for all tags and branches
 
