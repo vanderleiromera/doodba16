@@ -1,7 +1,7 @@
-version: "2.4"
+#version: "2.4"
 services:
   proxy:
-    image: traefik:2.4
+    image: traefik:2.10
     networks:
       shared:
         aliases: []
@@ -17,7 +17,19 @@ services:
       - dockersocket
     restart: unless-stopped
     tty: true
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.proxy-dashboard.rule:
+        Host(`${TRAEFIK_DOMAIN}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+      traefik.http.routers.proxy-dashboard.entrypoints: web-main
+      traefik.http.routers.proxy-dashboard.tls: "true"
+      traefik.http.routers.proxy-dashboard.service: api@internal
+      traefik.http.middlewares.strip.stripprefix.prefixes: /dashboard
+      traefik.http.middlewares.auth.basicauth.users: ${TRAEFIK_USERS_PASS}
+      traefik.http.middlewares.proxy-redirectscheme.redirectscheme.scheme: https
+      traefik.http.middlewares.proxy-redirectscheme.redirectscheme.permanent: "true"
     command:
+      - "--api.dashboard=true"
       - "--entrypoints.web-insecure.address=:80"
       - "--entrypoints.web-main.transport.respondingTimeouts.idleTimeout=60s"
       - "--entrypoints.web-main.http.middlewares=global-error-502@docker"

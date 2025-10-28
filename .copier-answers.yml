@@ -1,21 +1,29 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: v8.3.4
+_commit: v9.0.3
 _src_path: gh:Tecnativa/doodba-copier-template
-backup_dst: ""
+backup_deletion: false
+backup_dst: boto3+s3://paranastillus/odoo16
+backup_email_from: ""
+backup_email_to: ""
+backup_image_version: latest
+backup_tz: UTC
 cidr_whitelist: null
 domains_prod:
   - hosts:
-      - prod.docker.local
+      - eip.paranastillus.com
 domains_test:
   - hosts:
-      - test.docker.local
+      - test.paranastillus.com
 gitlab_url: ""
 odoo_dbfilter: ^prod
-odoo_initial_lang: en_US
+odoo_initial_lang: pt_BR
 odoo_listdb: false
+odoo_listdb_staging: false
 odoo_oci_image: ""
 odoo_proxy: traefik
 odoo_version: 16.0
+paths_with_crawlers:
+  - /web/image/website
 paths_without_crawlers:
   - /web
   - /website/info

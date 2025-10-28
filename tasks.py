@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import time
 from datetime import datetime
+from glob import iglob
 from itertools import chain
 from logging import getLogger
 from pathlib import Path
@@ -536,14 +537,14 @@ def lint(c, verbose=False):
 
 
 @task()
-def start(c, detach=True, debugpy=False):
+def start(c, detach=True, debugpy=False, _reload=True):
     """Start environment."""
     cmd = DOCKER_COMPOSE_CMD + " up"
     with tempfile.NamedTemporaryFile(
         mode="w",
         suffix=".yaml",
     ) as tmp_docker_compose_file:
-        if debugpy:
+        if debugpy or not _reload:
             # Remove auto-reload
             cmd = (
                 DOCKER_COMPOSE_CMD + " -f docker-compose.yml "
@@ -627,6 +628,103 @@ def install(
             env=UID_ENV,
             pty=True,
         )
+
+
+@task(
+    help={
+        "module": "Specific Odoo module to update.",
+        "all": "Update all modules. Takes a lot of time. [default: False]",
+        "repo": "Update all modules from a specific repository.",
+        "msgmerge": "Merge .pot changes into all .po files. [default: True]",
+        "fuzzy_matching": "Use fuzzy matching when merging. [default: False]",
+        "purge_old_translations": "Remove lines with old translations. [default: True]",
+        "remove_dates": "Remove dates from .po files. [default: True]",
+    }
+)
+def updatepot(
+    c,
+    module=None,
+    _all=False,
+    repo=None,
+    msgmerge=True,
+    fuzzy_matching=False,
+    purge_old_translations=True,
+    remove_dates=True,
+):
+    """Updates POT of a given module"""
+    if not module and not _all and not repo:
+        cur_module = _get_cwd_addon(Path.cwd())
+        if not cur_module:
+            raise exceptions.ParseError(
+                msg="Odoo addon to update translation not found "
+                "You must provide at least one of: -m {module}, "
+                "be in the subdirectory of a module, --all or -r {repo} "
+                "See --help for details."
+            )
+        module = cur_module
+
+    cmd = (
+        DOCKER_COMPOSE_CMD
+        + f" run --rm  -v {PROJECT_ROOT}/odoo/custom:/tmp/odoo/custom:rw,z "
+        f"-v {PROJECT_ROOT}/odoo/auto:/tmp/odoo/auto:rw,z odoo "
+        "click-odoo-makepot --addons-dir "
+        f"{'/tmp/odoo/auto/addons' if not repo else '/tmp/odoo/custom/src/' + repo}/"
+    )
+
+    cmd += " --msgmerge" if msgmerge else " --no-msgmerge"
+    cmd += " --no-fuzzy-matching" if not fuzzy_matching else " --fuzzy-matching"
+    cmd += (
+        " --purge-old-translations"
+        if purge_old_translations
+        else " --no-purge-old-translations"
+    )
+    if not _all and not repo:
+        cmd += f" -m {module}"
+
+    with c.cd(str(PROJECT_ROOT)):
+        c.run(DOCKER_COMPOSE_CMD + " stop odoo")
+        c.run(
+            cmd,
+            env=UID_ENV,
+            pty=True,
+        )
+    glob = (
+        f"{PROJECT_ROOT}/odoo/custom/src/{'*' if not repo else repo}"
+        f"/{'*' if _all or repo else module}/i18n/"
+    )
+    new_files = iglob(f"{glob}/*.po*")
+    for new_file in new_files:
+        file_name = os.path.basename(new_file)
+        if file_name.endswith("~"):
+            os.remove(new_file)
+            continue
+        with open(new_file) as fd:
+            content = fd.read()
+        new_lines = []
+        for line in content.splitlines():
+            if remove_dates and (
+                line.startswith('"POT-Creation-Date')
+                or line.startswith('"PO-Revision-Date')
+            ):
+                continue
+            new_lines.append(line)
+        content = "\n".join(new_lines)
+        with open(new_file, "w") as fd:
+            fd.write(content.strip() + "\n")
+    _logger.info(".po[t] files updated")
+    precommit_cmd = (
+        f"pre-commit run --files {' '.join(iglob(f'{glob}/*.po*'))}" "--color=always"
+    )
+    if not repo and module:
+        for folder in iglob(f"{PROJECT_ROOT}/odoo/custom/src/*/*"):
+            if os.path.isdir(folder) and os.path.basename(folder) == module:
+                repo = os.path.basename(os.path.dirname(folder))
+                break
+    precommit_folder = (
+        str(PROJECT_ROOT) + f"/odoo/custom/src/{repo}" if repo != "private" else ""
+    )
+    with c.cd(str(precommit_folder)):
+        c.run(precommit_cmd)
 
 
 @task(
@@ -767,7 +865,7 @@ def _get_module_list(
         "extra": "Test all extra addons. Default: False",
         "private": "Test all private addons. Default: False",
         "enterprise": "Test all enterprise addons. Default: False",
-        "skip": "List of addons to skip. Default: []",
+        "skip": "Comma-separated list of modules to skip. Default: ''",
         "debugpy": "Whether or not to run tests in a VSCode debugging session. "
         "Default: False",
         "cur-file": "Path to the current file."
@@ -824,9 +922,10 @@ def test(
         if not m_to_skip:
             continue
         if m_to_skip not in modules_list:
-            _logger.warn(
-                "%s not found in the list of addons to test: %s", (m_to_skip, modules)
+            _logger.warning(
+                "%s not found in the list of addons to test: %s", m_to_skip, modules
             )
+            continue
         modules_list.remove(m_to_skip)
     modules = ",".join(modules_list)
     odoo_command.append(modules)
@@ -908,11 +1007,25 @@ def resetdb(
             warn=True,
             pty=True,
         )
-        c.run(
-            f"{_run} click-odoo-initdb -n {dbname} -m {modules}",
-            env=UID_ENV,
-            pty=True,
-        )
+        lang = os.getenv("INITIAL_LANG")
+        lang_opt = f" --lang {lang}" if lang else ""
+        if ODOO_VERSION >= 19:
+            # Odoo 19: Registry.new(force_demo=...) removed → avoid click-odoo-initdb
+            # Use native Odoo CLI; --without-demo=all replaces force_demo=False
+            lang_opt19 = f" --load-language={lang}" if lang else ""
+            c.run(
+                f"{_run} odoo --stop-after-init -d {dbname} -i {modules}"
+                f"{lang_opt19} --without-demo=all",
+                env=UID_ENV,
+                pty=True,
+            )
+        else:
+            # Older versions keep using click-odoo-initdb
+            c.run(
+                f"{_run} click-odoo-initdb -n {dbname} -m {modules}{lang_opt}",
+                env=UID_ENV,
+                pty=True,
+            )
     if populate and ODOO_VERSION < 11:
         _logger.warn(
             f"Skipping populate task as it is not available in v{ODOO_VERSION}"
@@ -1095,3 +1208,52 @@ def restore_snapshot(
         )
         if "Stopping" in cur_state:
             c.run(f"{DOCKER_COMPOSE_CMD} start odoo db", pty=True)
+
+
+@task(
+    help={
+        "module_name": "Name of the module to scaffold.",
+        "path": "Path where to create the module. Default: current directory.",
+    },
+)
+def scaffold(
+    c,
+    module_name,
+    path=None,
+):
+    """Scaffold a new Odoo module.
+
+    Creates a new Odoo module with the basic structure using odoo scaffold command.
+    """
+    if not module_name:
+        raise exceptions.ParseError(
+            msg="Module name is required. See --help for details."
+        )
+
+    # Use current directory if no path specified, otherwise use the specified path
+    target_path = path or str(Path.cwd())
+
+    # Convert the target path to be relative to PROJECT_ROOT for the container
+    target_path_abs = Path(target_path).resolve()
+    if not target_path_abs.is_relative_to(PROJECT_ROOT):
+        raise exceptions.ParseError(
+            msg=f"Path '{target_path}' must be within the project directory."
+        )
+
+    # Convert to container path
+    container_path = str(target_path_abs.relative_to(PROJECT_ROOT))
+    if container_path == ".":
+        container_path = ""
+
+    cmd = (
+        f"{DOCKER_COMPOSE_CMD} run --rm -v "
+        f'"{PROJECT_ROOT}:/tmp/project:rw" '
+        f"odoo odoo scaffold {module_name} /tmp/project/{container_path}"
+    )
+
+    with c.cd(str(PROJECT_ROOT)):
+        c.run(
+            cmd,
+            env=UID_ENV,
+            pty=True,
+        )

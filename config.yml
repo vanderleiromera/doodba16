@@ -20,11 +20,11 @@ tls:
   options:
     # <...........Comentar esse trecho pra desativar cloudflare....>
     default:
-      clientAuth:
-        # in PEM format. each file can contain multiple CAs.
-        caFiles:
-          - /etc/certs/origin-pull-ca.pem
-        clientAuthType: RequireAndVerifyClientCert
+      #clientAuth:
+      # in PEM format. each file can contain multiple CAs.
+      #  caFiles:
+      #    - /etc/certs/origin-pull-ca.pem
+      #  clientAuthType: RequireAndVerifyClientCert
       # <............................................................>
       minVersion: VersionTLS12
       cipherSuites:
@@ -66,7 +66,7 @@ http:
         customFrameOptionsValue: "SAMEORIGIN"
         customresponseheaders:
           X-Robots-Tag: "none, noarchive, nosnippet, notranslate, noimageindex"
-        permissionsPolicy: geolocation=(), microphone=()
+        #permissionsPolicy: geolocation=(), microphone=()
 
     buffering:
       buffering:
