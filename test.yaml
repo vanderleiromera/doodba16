@@ -10,6 +10,7 @@ services:
       - .docker/db-access.env
     environment:
       DOODBA_ENVIRONMENT: "${DOODBA_ENVIRONMENT-test}"
+      LIST_DB: "false"
       ODOO_BUS_PUBLIC_SAMESITE_WS: 1
       # To install demo data export DOODBA_WITHOUT_DEMO=false
       WITHOUT_DEMO: "${DOODBA_WITHOUT_DEMO-all}"
@@ -19,7 +20,7 @@ services:
       ODOO_QUEUE_JOB_CHANNELS: "root:1"
       PGHOST: doodba16-odoo-16-0-test-db
     restart: unless-stopped
-    hostname: "test.docker.local"
+    hostname: "test.paranastillus.com"
     depends_on:
       - db
       - smtp
@@ -28,42 +29,49 @@ services:
       globalwhitelist_shared:
       inverseproxy_shared:
     labels:
-      doodba.domain.main: "test.docker.local"
+      doodba.domain.main: "test.paranastillus.com"
       traefik.enable: "true"
-      traefik.domain: "test.docker.local"
+      traefik.domain: "test.paranastillus.com"
       traefik.forbiddenCrawlers-0.frontend.headers.customResponseHeaders:
         "X-Robots-Tag:noindex, nofollow"
-      traefik.forbiddenCrawlers-0.frontend.rule: Host:test.docker.local;Path:/{anything:.*}
-      traefik.longpolling-0.frontend.rule: Host:test.docker.local;Path:/websocket,/websocket/{anything:.*}
+      traefik.forbiddenCrawlers-0.frontend.rule: Host:test.paranastillus.com;Path:/{anything:.*}
+      traefik.longpolling-0.frontend.rule: Host:test.paranastillus.com;Path:/websocket,/websocket/{anything:.*}
       traefik.longpolling-0.port: 8072
+      traefik.http.middlewares.doodba16-odoo-16-0-test-override-ws-headers.headers.customRequestHeaders.X-Forwarded-Proto: "https"
       traefik.http.services.doodba16-odoo-16-0-test-main.loadbalancer.server.port: 8069
       traefik.http.services.doodba16-odoo-16-0-test-longpolling.loadbalancer.server.port: 8072
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-0.rule:
-        Host(`test.docker.local`) && Path(`/websocket`)
+        Host(`test.paranastillus.com`) && Path(`/websocket`)
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-0.service: doodba16-odoo-16-0-test-longpolling
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-0.middlewares:
-        doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-forceSecure
+        doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-forceSecure,
+        doodba16-odoo-16-0-test-override-ws-headers
+      traefik.http.routers.doodba16-odoo-16-0-test-longpolling-0.priority: 20
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-secure-0.rule:
-        Host(`test.docker.local`) && Path(`/websocket`)
+        Host(`test.paranastillus.com`) && Path(`/websocket`)
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-secure-0.service: doodba16-odoo-16-0-test-longpolling
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-secure-0.middlewares:
-        doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-forceSecure
+        doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-forceSecure,
+        doodba16-odoo-16-0-test-override-ws-headers
+      traefik.http.routers.doodba16-odoo-16-0-test-longpolling-secure-0.priority: 20
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-secure-0.tls: "true"
       traefik.http.routers.doodba16-odoo-16-0-test-longpolling-secure-0.tls.certResolver: letsencrypt
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-0.rule:
-        Host(`test.docker.local`) && (PathPrefix(`/`))
+        Host(`test.paranastillus.com`) && (PathPrefix(`/`))
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-0.service: doodba16-odoo-16-0-test-main
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-0.middlewares:
         doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-buffering,
         doodba16-odoo-16-0-test-compress, doodba16-odoo-16-0-test-forbid-crawlers,
         doodba16-odoo-16-0-test-forceSecure
+      traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-0.priority: 10
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-secure-0.rule:
-        Host(`test.docker.local`) && (PathPrefix(`/`))
+        Host(`test.paranastillus.com`) && (PathPrefix(`/`))
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-secure-0.service: doodba16-odoo-16-0-test-main
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-secure-0.middlewares:
         doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-buffering,
         doodba16-odoo-16-0-test-compress, doodba16-odoo-16-0-test-forbid-crawlers,
         doodba16-odoo-16-0-test-forceSecure
+      traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-secure-0.priority: 10
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-secure-0.tls: "true"
       traefik.http.routers.doodba16-odoo-16-0-test-forbiddenCrawlers-secure-0.tls.certResolver: letsencrypt
     command:
@@ -80,7 +88,7 @@ services:
       file: common.yaml
       service: db
     environment:
-      - DB_HOST=doodba16-odoo-16-0-test-db
+      DB_HOST: doodba16-odoo-16-0-test-db
     env_file:
       - .docker/db-creation.env
     networks:
@@ -100,11 +108,11 @@ services:
           - smtplocal
       inverseproxy_shared:
     labels:
-      doodba.domain.main: "test.docker.local"
+      doodba.domain.main: "test.paranastillus.com"
       traefik.docker.network: "inverseproxy_shared"
       traefik.enable: "true"
       traefik.frontend.passHostHeader: "true"
-      traefik.mailhog-0.frontend.rule: Host:test.docker.local;PathPrefixStrip:/smtpfake/
+      traefik.mailhog-0.frontend.rule: Host:test.paranastillus.com;PathPrefixStrip:/smtpfake/
       traefik.mailhog-0.port: 8025
       # Mailhog service
       traefik.http.middlewares.doodba16-odoo-16-0-test-mailhog-stripprefix.stripPrefix.prefixes: /smtpfake/
@@ -118,14 +126,14 @@ services:
       traefik.http.middlewares.doodba16-odoo-16-0-test-forceSecure.redirectScheme.scheme: https
       traefik.http.middlewares.doodba16-odoo-16-0-test-forceSecure.redirectScheme.permanent: "true"
       traefik.http.routers.doodba16-odoo-16-0-test-mailhog-0.rule:
-        Host(`test.docker.local`) && PathPrefix(`/smtpfake/`)
+        Host(`test.paranastillus.com`) && PathPrefix(`/smtpfake/`)
       traefik.http.routers.doodba16-odoo-16-0-test-mailhog-0.service: doodba16-odoo-16-0-test-mailhog
       traefik.http.routers.doodba16-odoo-16-0-test-mailhog-0.middlewares:
         doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-buffering,
         doodba16-odoo-16-0-test-compress, doodba16-odoo-16-0-test-forbid-crawlers,
         doodba16-odoo-16-0-test-forceSecure, doodba16-odoo-16-0-test-mailhog-stripprefix
       traefik.http.routers.doodba16-odoo-16-0-test-mailhog-secure-0.rule:
-        Host(`test.docker.local`) && PathPrefix(`/smtpfake/`)
+        Host(`test.paranastillus.com`) && PathPrefix(`/smtpfake/`)
       traefik.http.routers.doodba16-odoo-16-0-test-mailhog-secure-0.service: doodba16-odoo-16-0-test-mailhog
       traefik.http.routers.doodba16-odoo-16-0-test-mailhog-secure-0.middlewares:
         doodba16-odoo-16-0-test-addSTS, doodba16-odoo-16-0-test-buffering,

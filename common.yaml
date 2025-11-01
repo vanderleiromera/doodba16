@@ -14,7 +14,6 @@ services:
       PGDATABASE: &dbname prod
       PGUSER: &dbuser "odoo"
       PROXY_MODE: "true"
-      LIST_DB: "false"
     tty: true
     volumes:
       - filestore:/var/lib/odoo:z
@@ -37,3 +36,18 @@ services:
 
   smtpfake:
     image: docker.io/mailhog/mailhog
+
+  backup:
+    image: ghcr.io/tecnativa/docker-duplicity-postgres-s3:latest
+    hostname: backup.eip.paranastillus.com
+    init: true
+    environment:
+      DB_VERSION: "16"
+      DBS_TO_INCLUDE: "^prod"
+      DST: "boto3+s3://paranastillus/odoo16"
+      PGDATABASE: *dbname
+      PGUSER: *dbuser
+      TZ: "UTC"
+    volumes:
+      - backup_cache:/root:z
+      - filestore:/mnt/backup/src/odoo:z
