@@ -30,3 +30,4 @@
 # Project-specific docker configurations
 /.docker/
 .env
+/backups/
