@@ -98,7 +98,9 @@ jobs:
             ${{ env.TEST_TAG }} \
             odoo --stop-after-init -i base
 
-      - name: Push final image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Push test image
         run: |
-          docker push vanderleiromera/doodba16_odoo:${{ steps.tagging.outputs.new_version }}
+          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:ci-test
+          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:${{ github.sha }}
+          docker push vanderleiromera/doodba16_odoo:ci-test
+          docker push vanderleiromera/doodba16_odoo:${{ github.sha }}
