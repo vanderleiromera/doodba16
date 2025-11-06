@@ -18,11 +18,13 @@ jobs:
 
       - name: Pull test image using the commit SHA
         run: |
-          docker pull vanderleiromera/doodba16_odoo:${{ github.event.head_commit.id }}
+          SHA=${GITHUB_SHA::7}
+          docker pull vanderleiromera/doodba16_odoo:$SHA
 
       - name: Retag and push as production tags
         run: |
-          docker tag vanderleiromera/doodba16_odoo:${{ github.event.head_commit.id }} vanderleiromera/doodba16_odoo:latest
-          docker tag vanderleiromera/doodba16_odoo:${{ github.event.head_commit.id }} vanderleiromera/doodba16_odoo:prod
+          SHA=${GITHUB_SHA::7}
+          docker tag vanderleiromera/doodba16_odoo:$SHA vanderleiromera/doodba16_odoo:latest
+          docker tag vanderleiromera/doodba16_odoo:$SHA vanderleiromera/doodba16_odoo:prod
           docker push vanderleiromera/doodba16_odoo:latest
           docker push vanderleiromera/doodba16_odoo:prod

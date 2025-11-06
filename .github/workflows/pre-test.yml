@@ -60,6 +60,12 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ env.DOO_GITHUB_TOKEN }}
+          default_bump: patch
+
+      - name: Set DISPATCH_TAG for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "DISPATCH_TAG=manual-$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
       - name: Build doodba image
         id: build
@@ -71,8 +77,8 @@ jobs:
             ODOO_VERSION=16.0
           tags: |
             ${{ env.TEST_TAG }}
-            vanderleiromera/doodba16_odoo:${{ steps.tagging.outputs.new_version }}
           load: true
+          no-cache: true #força rebuild do Doodba
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -100,7 +106,8 @@ jobs:
 
       - name: Push test image
         run: |
+          TAG=${{ steps.tagging.outputs.new_version || env.DISPATCH_TAG }}
           docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:ci-test
-          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:${{ github.sha }}
+          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$TAG
           docker push vanderleiromera/doodba16_odoo:ci-test
-          docker push vanderleiromera/doodba16_odoo:${{ github.sha }}
+          docker push vanderleiromera/doodba16_odoo:$TAG
