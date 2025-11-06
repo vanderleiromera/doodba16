@@ -106,8 +106,8 @@ jobs:
 
       - name: Push test image
         run: |
-          TAG=${{ steps.tagging.outputs.new_version || env.DISPATCH_TAG }}
-          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:ci-test
-          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$TAG
-          docker push vanderleiromera/doodba16_odoo:ci-test
-          docker push vanderleiromera/doodba16_odoo:$TAG
+          VERSION=${{ steps.tagging.outputs.new_version }}
+          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$VERSION-ci-test
+          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$VERSION
+          docker push vanderleiromera/doodba16_odoo:$VERSION-ci-test
+          docker push vanderleiromera/doodba16_odoo:$VERSION

@@ -10,21 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Login to Docker Hub
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Le tag da versão gerada no pre-test
+        run: |
+          VERSION=$(git describe --tags --abbrev=0)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Login DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Pull test image using the commit SHA
+      - name: Puxa imagem de teste e promove a prod
         run: |
-          SHA=${GITHUB_SHA::7}
-          docker pull vanderleiromera/doodba16_odoo:$SHA
-
-      - name: Retag and push as production tags
-        run: |
-          SHA=${GITHUB_SHA::7}
-          docker tag vanderleiromera/doodba16_odoo:$SHA vanderleiromera/doodba16_odoo:latest
-          docker tag vanderleiromera/doodba16_odoo:$SHA vanderleiromera/doodba16_odoo:prod
+          docker pull vanderleiromera/doodba16_odoo:${{ env.VERSION }}
+          docker tag  vanderleiromera/doodba16_odoo:${{ env.VERSION }} vanderleiromera/doodba16_odoo:latest
+          docker tag  vanderleiromera/doodba16_odoo:${{ env.VERSION }} vanderleiromera/doodba16_odoo:prod
           docker push vanderleiromera/doodba16_odoo:latest
           docker push vanderleiromera/doodba16_odoo:prod
