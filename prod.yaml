@@ -1,6 +1,59 @@
 #version: "2.4"
 
 services:
+  metabase:
+    image: metabase/metabase:v0.55.12
+    volumes:
+      - /dev/urandom:/dev/random:ro
+    restart: unless-stopped
+    env_file:
+      - .docker/metabase.env
+    depends_on:
+      - db
+    networks:
+      default:
+      inverseproxy_shared:
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.metabase-odoo.rule=Host(`bi.paranastillus.com`)
+      - traefik.http.services.metabase-odoo.loadbalancer.server.port=3000
+      - traefik.http.routers.metabase-odoo.entrypoints=web-main # Garantir o uso do entrypoint correto
+      - traefik.http.services.metabase-odoo.loadbalancer.sticky.cookie=true
+
+  vanna:
+    image: vanderleiromera/vanna-ai-odoo:0.0.1
+    env_file:
+      - .docker/vanna-aug.env
+    #ports:
+    #  - "8502:8502"
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      default:
+      inverseproxy_shared:
+        # Add healthcheck to ensure the container is running properly
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os; print(os.path.exists('/app/data/chromadb'))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - chromadb-aug:/app/data/chromadb
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ai-odoo.rule=Host(`ai.paranastillus.com)
+      - traefik.http.services.ai-odoo.loadbalancer.server.port=8501
+      - traefik.http.routers.ai-odoo.entrypoints=web-main # Garantir o uso do entrypoint correto
+      - traefik.http.services.ai-odoo.loadbalancer.sticky.cookie=true
+
   odoo:
     extends:
       file: common.yaml
@@ -149,3 +202,6 @@ volumes:
   backup_cache:
   filestore:
   db:
+  metabase:
+  chromadb-aug:
+    driver: local
