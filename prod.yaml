@@ -2,7 +2,7 @@
 
 services:
   metabase:
-    image: metabase/metabase:v0.55.12
+    image: metabase/metabase:v0.56.13
     volumes:
       - /dev/urandom:/dev/random:ro
     restart: unless-stopped
@@ -21,7 +21,7 @@ services:
       - traefik.http.services.metabase-odoo.loadbalancer.sticky.cookie=true
 
   vanna:
-    image: vanderleiromera/vanna-ai-odoo:0.0.1
+    image: vanderleiromera/vanna-ai-odoo:0.0.2
     env_file:
       - .docker/vanna-aug.env
     #ports:
@@ -49,7 +49,7 @@ services:
       - chromadb-aug:/app/data/chromadb
     labels:
       - traefik.enable=true
-      - traefik.http.routers.ai-odoo.rule=Host(`ai.paranastillus.com)
+      - traefik.http.routers.ai-odoo.rule=Host(`ai.paranastillus.com`)
       - traefik.http.services.ai-odoo.loadbalancer.server.port=8501
       - traefik.http.routers.ai-odoo.entrypoints=web-main # Garantir o uso do entrypoint correto
       - traefik.http.services.ai-odoo.loadbalancer.sticky.cookie=true
