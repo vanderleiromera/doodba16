@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - ci-test
-  pull_request:
   workflow_dispatch:
 
 env:
@@ -15,7 +14,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5.0.1
+      - uses: actions/checkout@v6.0.0
       - uses: actions/setup-python@v6.0.0
         with:
           python-version: "3.10.19"
@@ -39,7 +38,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v5.0.1
+      - uses: actions/checkout@v6.0.0
         with:
           fetch-depth: 0 # necessário para tagging
 
@@ -61,11 +60,8 @@ jobs:
         with:
           github_token: ${{ env.DOO_GITHUB_TOKEN }}
           default_bump: patch
-
-      - name: Set DISPATCH_TAG for workflow_dispatch
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "DISPATCH_TAG=manual-$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+          release_branches: ci-test
+          pre_release_suffix: ci-test
 
       - name: Build doodba image
         id: build
@@ -107,7 +103,10 @@ jobs:
       - name: Push test image
         run: |
           VERSION=${{ steps.tagging.outputs.new_version }}
-          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$VERSION-ci-test
+          echo "Generated version: $VERSION"
           docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$VERSION
-          docker push vanderleiromera/doodba16_odoo:$VERSION-ci-test
           docker push vanderleiromera/doodba16_odoo:$VERSION
+
+          # Salva a versão para uso no PR
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "::notice::Image tagged and pushed as vanderleiromera/doodba16_odoo:$VERSION"
