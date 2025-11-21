@@ -1,22 +1,35 @@
 name: Release
-
 on:
   push:
     branches:
-      - main
+      - main # Só executa em push para main
 
 jobs:
   promote-image:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v5.0.1
+        uses: actions/checkout@v6.0.0
+        with:
+          fetch-depth: 0
 
-      - name: Le tag da versão gerada no pre-test
+      - name: Get latest version tag from repository
+        id: get_version
         run: |
-          VERSION=$(git describe --tags --abbrev=0)
+          # Busca todas as tags
+          git fetch --tags
+
+          # Pega a tag mais recente
+          VERSION=$(git tag --sort=-v:refname | head -n 1)
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version tag found. Make sure ci-test workflow created a tag."
+            exit 1
+          fi
+
+          echo "Found version: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Login DockerHub
         uses: docker/login-action@v3
@@ -24,10 +37,19 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Puxa imagem de teste e promove a prod
+      - name: Pull test image and promote to prod
         run: |
+          echo "Promoting version ${{ env.VERSION }} to production..."
+
+          # Puxa a imagem testada
           docker pull vanderleiromera/doodba16_odoo:${{ env.VERSION }}
-          docker tag  vanderleiromera/doodba16_odoo:${{ env.VERSION }} vanderleiromera/doodba16_odoo:latest
-          docker tag  vanderleiromera/doodba16_odoo:${{ env.VERSION }} vanderleiromera/doodba16_odoo:prod
+
+          # Cria as tags de produção
+          docker tag vanderleiromera/doodba16_odoo:${{ env.VERSION }} vanderleiromera/doodba16_odoo:latest
+          docker tag vanderleiromera/doodba16_odoo:${{ env.VERSION }} vanderleiromera/doodba16_odoo:prod
+
+          # Push das tags de produção
           docker push vanderleiromera/doodba16_odoo:latest
           docker push vanderleiromera/doodba16_odoo:prod
+
+          echo "::notice::Successfully promoted version ${{ env.VERSION }} to production"
