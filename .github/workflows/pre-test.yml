@@ -15,7 +15,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v5.0.1
       - uses: actions/setup-python@v6.0.0
         with:
           python-version: "3.10.19"
@@ -39,12 +39,12 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v5.0.1
         with:
           fetch-depth: 0 # necessário para tagging
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.6.0
+        uses: docker/setup-qemu-action@v3.7.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.11.1
@@ -106,8 +106,8 @@ jobs:
 
       - name: Push test image
         run: |
-          TAG=${{ steps.tagging.outputs.new_version || env.DISPATCH_TAG }}
-          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:ci-test
-          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$TAG
-          docker push vanderleiromera/doodba16_odoo:ci-test
-          docker push vanderleiromera/doodba16_odoo:$TAG
+          VERSION=${{ steps.tagging.outputs.new_version }}
+          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$VERSION-ci-test
+          docker tag ${{ env.TEST_TAG }} vanderleiromera/doodba16_odoo:$VERSION
+          docker push vanderleiromera/doodba16_odoo:$VERSION-ci-test
+          docker push vanderleiromera/doodba16_odoo:$VERSION
